@@ -151,8 +151,14 @@ O:		  ID					{
 		;
 
 RLIST:	  RLIST SEPARATOR R		{
-			rlist[$<number>1] = $<number>3;
-			$<number>$ = $<number>1 + 1;
+			if ($<number>1 > 2) {
+				yyerror("Error: Too many registers.");
+				$<number>$ = $<number>1;
+			} else {
+				rlist[$<number>1] = $<number>3;
+				$<number>$ = $<number>1 + 1;
+				std::cout << "- R: $" << $<number>3 << std::endl;
+			}
 		}
 		| R						{
 			rlist = new int[3];
