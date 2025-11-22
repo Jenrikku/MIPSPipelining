@@ -8,7 +8,6 @@
 
 #include <stdlib.h>
 #include <iostream>
-#include <cstring>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -157,7 +156,6 @@ RLIST:	  RLIST SEPARATOR R		{
 			} else {
 				rlist[$<number>1] = $<number>3;
 				$<number>$ = $<number>1 + 1;
-				std::cout << "- R: $" << $<number>3 << std::endl;
 			}
 		}
 		| R						{

@@ -1,8 +1,4 @@
-enum optype {
-	OPLABEL,
-	OPINDIRECT,
-	OPIM
-};
+enum optype { OPLABEL, OPINDIRECT, OPIM };
 
 typedef struct indirect {
 	int im;
@@ -18,5 +14,6 @@ typedef struct instruction {
 	const char *label;
 	const char *name;
 	const int *rlist;
+	int rcount;
 	operand op;
 } instruction;
