@@ -4,8 +4,17 @@ project(mipspipeline)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(mipspipeline src/main.cpp
-                            src/interpreter/executer.cpp
-                            src/interpreter/parser.cpp)
+find_package(FLEX)
+flex_target(scanner src/interpreter/scanner.l ${CMAKE_BINARY_DIR}/scanner.cpp OPTIONS -+)
 
+find_package(BISON)
+bison_target(parser src/interpreter/parser.yy ${CMAKE_BINARY_DIR}/parser.cpp OPTIONS -d -Wcounterexamples)
+
+add_flex_bison_dependency(scanner parser)
+
+# add_executable(mipspipeline src/main.cpp
+#                             src/interpreter/executer.cpp
+#                             src/interpreter/parser.cpp)
+
+add_executable(mipspipeline ${BISON_parser_OUTPUTS} ${FLEX_scanner_OUTPUTS})
 target_include_directories(mipspipeline PRIVATE include)
