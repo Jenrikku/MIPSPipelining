@@ -1,7 +1,7 @@
 
 // Note: Code that is added to .hpp
 %code requires {
-#include "interpreter.h"
+#include "parseraux.h"
 }
 
 %{

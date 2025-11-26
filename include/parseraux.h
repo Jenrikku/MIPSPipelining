@@ -1,4 +1,4 @@
-enum optype { OPLABEL, OPINDIRECT, OPIM };
+enum optype { OPNONE = 0, OPLABEL, OPINDIRECT, OPIM };
 
 typedef struct indirect {
 	int im;
