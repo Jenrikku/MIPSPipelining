@@ -17,8 +17,7 @@ enum struct instrType : char {
 	MEM, // Load and store operations
 	BRA2, // Branch operations that compare 2 registers
 	BRA1, // Branch operations that compare 1 register
-	J, // Regular jump
-	JR // Jump using value from register
+	J // Inconditional jump
 };
 
 enum struct operation : char {
@@ -42,9 +41,9 @@ enum struct operation : char {
 
 enum struct varType : char { VAR, ARRAY };
 
-enum struct dataSize : char { BYTE, HALF, WORD };
+enum struct dataSize : char { WORD = 0, BYTE, HALF };
 
-enum struct opMod : char { IMMEDIATE, UNSIGNED };
+enum struct opMod : char { NONE = 0, IMMEDIATE, UNSIGNED, IMMEDIATE_UNSIGNED };
 
 class instruction
 {
