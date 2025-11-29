@@ -19,7 +19,7 @@ comment		[\/@#;].*
 ignore		[ \t\r]+
 label		^.+\:
 r			[$R][0-9][0-9]?
-im			-?[1-9][0-9]*
+im			-?[0-9]*
 lparen		\(
 rparen		\)
 separator	\,

@@ -1,3 +1,10 @@
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+namespace parser
+{
 enum optype { OPNONE = 0, OPLABEL, OPINDIRECT, OPIM };
 
 typedef struct indirect {
@@ -17,3 +24,7 @@ typedef struct instruction {
 	int rcount;
 	operand op;
 } instruction;
+
+std::vector<instruction> parse(istream *in);
+void freeResources();
+} // namespace parser
