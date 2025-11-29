@@ -12,9 +12,9 @@ bison_target(parser src/parser.yy ${CMAKE_BINARY_DIR}/parser.cpp OPTIONS -d -Wco
 
 add_flex_bison_dependency(scanner parser)
 
-# add_executable(mipspipeline src/main.cpp
-#                             src/interpreter/executer.cpp
-#                             src/interpreter/parser.cpp)
+add_executable(mipspipeline ${BISON_parser_OUTPUTS} ${FLEX_scanner_OUTPUTS}
+                            src/main.cpp
+                            src/simulator.cpp
+                            src/translator.cpp)
 
-add_executable(mipspipeline ${BISON_parser_OUTPUTS} ${FLEX_scanner_OUTPUTS})
 target_include_directories(mipspipeline PRIVATE include)

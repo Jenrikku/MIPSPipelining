@@ -1,5 +1,7 @@
 #include "translator.h"
+#include <cstdint>
 #include <string>
+#include <sys/types.h>
 
 namespace translator
 {
@@ -9,7 +11,7 @@ bool isVarDef(instruction &instr)
 	return name.length() >= 3 && name.starts_with("DE");
 }
 
-bool toVarDef(instruction &instr, simulator::varDef &outRes, ostream err)
+bool toVarDef(instruction &instr, simulator::varDef &outRes, ostream &err)
 {
 	if (instr.label == nullptr) {
 		err << "Error: Variable definitions requires a label." << endl;
@@ -34,6 +36,9 @@ bool toVarDef(instruction &instr, simulator::varDef &outRes, ostream err)
 		return false;
 	}
 
+	outRes.value = *(uint *)instr.op.ptr;
+	outRes.label = string(instr.label);
+
 	switch (name[2]) {
 		case 'F':
 			outRes.type = simulator::varType::VAR;
@@ -41,6 +46,12 @@ bool toVarDef(instruction &instr, simulator::varDef &outRes, ostream err)
 
 		case 'V':
 			outRes.type = simulator::varType::ARRAY;
+
+			if (outRes.value == 0) {
+				err << "Error: Cannot reserve 0 spaces in memory." << endl;
+				return false;
+			}
+
 			break;
 
 		default:
@@ -54,27 +65,37 @@ bool toVarDef(instruction &instr, simulator::varDef &outRes, ostream err)
 		switch (name[3]) {
 			case 'B':
 				outRes.size = simulator::dataSize::BYTE;
+
+				if (outRes.type == simulator::varType::VAR && outRes.value != (uint8_t)outRes.value) {
+					err << "Warning: Variable " << outRes.label
+						<< " value's overflowed. Actual value (unsigned 8-bit): " << (outRes.value & 255) << endl;
+				}
+
 				break;
 
 			case 'H':
 				outRes.size = simulator::dataSize::HALF;
+
+				if (outRes.type == simulator::varType::VAR && outRes.value != (uint16_t)outRes.value) {
+					err << "Warning: Variable " << outRes.label
+						<< " value's overflowed. Actual value (unsigned 16-bit): " << (uint16_t)outRes.value << endl;
+				}
+
 				break;
 
 			case 'W': // Do nothing
 				break;
 
 			default:
-				err << "Error: Unknown variable data type." << endl;
+				err << "Error: Unknown variable data type for variable " << outRes.label << '.' << endl;
 				return false;
 		}
 	}
 
-	outRes.label = string(instr.label);
-	outRes.value = *(int *)instr.op.ptr;
 	return true;
 }
 
-bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream err)
+bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream &err)
 {
 	string name = string(instr.name);
 	int length = name.length(); // We assume length > 0 always thanks to parser code
@@ -116,13 +137,18 @@ bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream e
 	};
 
 	auto checkRegisters = [&instr, &name, &err](int rcount) -> bool {
-		if (instr.rlist == nullptr || instr.rcount != rcount) {
+		if (instr.rcount != rcount) {
 			err << "Error: Instruction " << name << " requires a total of " << rcount << " registers but found "
 				<< instr.rcount << '.' << endl;
 			return false;
 		}
 
 		return true;
+	};
+
+	auto errorUnkReg = [&name, &err](int reg) {
+		err << "Error: Instruction " << name << " refers to an unknown register: $" << reg
+			<< ". Only registers from $0 to $31 exist." << endl;
 	};
 
 	auto errorUnkInstr = [&name, &err](string type) {
@@ -133,7 +159,47 @@ bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream e
 		err << "Error: Instruction " << name << " tried to write to constant value $0." << endl;
 	};
 
-	indirect indir;
+	// Check that all registers are valid:
+	for (int i = 0; i < instr.rcount; i++) {
+		if ((uint)instr.rlist[i] > 31) {
+			errorUnkReg(instr.rlist[i]);
+			return false;
+		}
+	}
+
+	// Check that the op is valid:
+	switch (instr.op.type) {
+		int im;
+		indirect indir;
+
+		case OPINDIRECT:
+			indir = *(indirect *)instr.op.ptr;
+
+			if ((uint)indir.reg > 31) {
+				errorUnkReg(indir.reg);
+				return false;
+			}
+
+			if (indir.im != (short)indir.im) {
+				err << "Warning: Instruction " << name << " offset has overflown. Actual value:" << (short)indir.im
+					<< '.' << endl;
+			}
+
+			break;
+
+		case OPIM:
+			im = *(int *)instr.op.ptr;
+
+			if (im != (short)im) {
+				err << "Warning: Instruction " << name << " immediate operand has overflown. Actual value:" << (short)im
+					<< '.' << endl;
+			}
+
+			break;
+
+		default:
+			break;
+	}
 
 	if (instr.label != nullptr) outRes.label = string(instr.label);
 	outRes.displayName = string(instr.name);
@@ -142,6 +208,8 @@ bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream e
 	outRes.op = simulator::operation::NUL;
 
 	switch (name[0]) {
+		indirect indir;
+
 		case 'S': // Store
 			outRes.op = simulator::operation::S;
 		case 'L': // Load
@@ -167,7 +235,7 @@ bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream e
 			}
 
 			indir = *(indirect *)instr.op.ptr;
-			outRes.im = indir.reg;
+			outRes.im = indir.im;
 			outRes.rS = indir.reg;
 
 			switch (name[1]) {
@@ -191,13 +259,18 @@ bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream e
 			return true;
 
 		case 'B': // Branches
-			if (length != 3 || length != 4) {
+			if (length != 3 && length != 4) {
 				errorUnkInstr("Branch");
 				return false;
 			}
 
 			if (!checkLabel()) return false;
 			outRes.labelOp = string((char *)instr.op.ptr);
+
+			if (outRes.label == outRes.labelOp) {
+				err << "Error: Branches cannot have their own label as an operand." << endl;
+				return false;
+			}
 
 			if (length == 3) { // Branch with 2 registers
 				outRes.type = simulator::instrType::BRA2;
@@ -264,6 +337,7 @@ bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream e
 
 		outRes.type = simulator::instrType::NOP;
 		outRes.op = simulator::operation::NONE;
+		outRes.displayName = "NOP"; // Use NOP over NOOP always.
 		return true;
 	}
 
@@ -381,6 +455,13 @@ bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream e
 		outRes.rT = instr.rlist[0];
 		outRes.rS = instr.rlist[1];
 		outRes.im = *(int *)instr.op.ptr;
+
+		if (outRes.rT == 0) {
+			errorRZero();
+			return false;
+		}
+
+		return true;
 	}
 
 	// Regular R-Types
@@ -391,6 +472,11 @@ bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream e
 	outRes.rD = instr.rlist[0];
 	outRes.rS = instr.rlist[1];
 	outRes.rT = instr.rlist[2];
+
+	if (outRes.rD == 0) {
+		errorRZero();
+		return false;
+	}
 
 	return true;
 }
