@@ -218,6 +218,8 @@ bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream &
 		indirect indir;
 
 		case 'S': // Store
+			if (name[1] == 'U') break; // May be SUB
+
 			outRes.op = simulator::operation::S;
 		case 'L': // Load
 			if (length != 2) {

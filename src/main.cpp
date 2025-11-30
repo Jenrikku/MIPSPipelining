@@ -9,11 +9,11 @@ int main()
 	simulator::memory dataMem;
 	int regs[32] = {};
 
-	vector<instruction> code = parse(&cin);
+	vector<instruction> instrs = parse(&cin);
 
 	// Variable declarations
-	for (; line < code.size(); line++) {
-		instruction instr = code[line];
+	for (; line < instrs.size(); line++) {
+		instruction instr = instrs[line];
 		simulator::varDef varDef;
 
 		if (!translator::isVarDef(instr)) break;
@@ -28,9 +28,11 @@ int main()
 
 	dataMem.shrink();
 
+	simulator::instruction code[instrs.size() - line];
+
 	// Instructions
-	for (; line < code.size(); line++) {
-		instruction instr = code[line];
+	for (int i = 0; line < instrs.size(); line++, i++) {
+		instruction instr = instrs[line];
 		simulator::instruction instruction;
 
 		if (translator::isVarDef(instr)) {
@@ -43,10 +45,13 @@ int main()
 			return -1;
 		}
 
-		cout << instruction.label << "\t" << instruction.displayName << "\tT: " << (int)instruction.type
-			 << " OP: " << (int)instruction.op << " rS: " << (ushort)instruction.rS << " rT: " << (ushort)instruction.rT
-			 << " rD: " << (ushort)instruction.rD << " F: " << (ushort)instruction.flags.mod
-			 << " IM: " << instruction.im << " LabelOP: " << instruction.labelOp << endl;
+		code[i] = instruction;
+	}
+
+	for (simulator::instruction instr : code) {
+		cout << instr.label << "\t" << instr.displayName << "\tT: " << (int)instr.type << " OP: " << (int)instr.op
+			 << " rS: " << (ushort)instr.rS << " rT: " << (ushort)instr.rT << " rD: " << (ushort)instr.rD
+			 << " F: " << (ushort)instr.flags.mod << " IM: " << instr.im << " LabelOP: " << instr.labelOp << endl;
 	}
 
 	freeResources(); // Frees resources from the parser
