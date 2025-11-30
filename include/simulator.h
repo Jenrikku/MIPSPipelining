@@ -1,5 +1,6 @@
 #include <concepts>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 using namespace std;
@@ -47,27 +48,6 @@ enum struct dataSize : char { WORD = 0, BYTE, HALF };
 
 enum struct opMod : char { NONE = 0, IMMEDIATE, UNSIGNED, IMMEDIATE_UNSIGNED };
 
-class instruction
-{
-  public:
-	string label;
-	string displayName;
-	instrType type;
-	operation op;
-
-	reg rS; // Operand 1
-	reg rT; // Operand 2 or result
-	reg rD; // Result
-
-	union {
-		dataSize size;
-		opMod mod;
-	} flags;
-
-	short im;
-	string labelOp;
-};
-
 class varDef
 {
   public:
@@ -90,7 +70,7 @@ class memory
 		uint end = idx + sizeof(T);
 		if (internalMem.size() < end) return nullptr;
 
-		return &internalMem[idx];
+		return (T *)&internalMem[idx];
 	}
 
 	// Adds the variable to memory. Returns the resulting index in memory.
@@ -103,5 +83,30 @@ class memory
 	{
 		return internalMem.size();
 	}
+};
+
+class instruction
+{
+  public:
+	string label;
+	string displayName;
+	instrType type;
+	operation op;
+
+	reg rS; // Operand 1
+	reg rT; // Operand 2 or result
+	reg rD; // Result
+
+	union {
+		dataSize size;
+		opMod mod;
+	} flags;
+
+	short im;
+	string labelOp;
+
+	void execute(memory &mem, int regs[], unordered_map<string, int> &labelMap, int &pc);
+
+	string toString();
 };
 } // namespace simulator

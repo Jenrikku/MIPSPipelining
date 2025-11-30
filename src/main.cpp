@@ -1,5 +1,6 @@
 #include "translator.h"
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 
 int main()
@@ -28,7 +29,9 @@ int main()
 
 	dataMem.shrink();
 
-	simulator::instruction code[instrs.size() - line];
+	int codeSize = instrs.size() - line;
+	simulator::instruction code[codeSize];
+	unordered_map<string, int> labelMap;
 
 	// Instructions
 	for (int i = 0; line < instrs.size(); line++, i++) {
@@ -45,13 +48,37 @@ int main()
 			return -1;
 		}
 
+		if (!instruction.label.empty()) {
+			if (labelMap.contains(instruction.label)) {
+				cerr << "Error: cannot have the same label for more than one instruction. Instruction " << line + 1
+					 << " for label " << instruction.label << endl;
+				return -1;
+			}
+
+			labelMap[instruction.label] = i;
+		}
+
+		if (!instruction.labelOp.empty()) {
+			if (!labelMap.contains(instruction.labelOp)) {
+				cerr << "Error: reference to unknown label " << instruction.labelOp << " in instruction " << line + 1
+					 << endl;
+				return -1;
+			}
+		}
+
 		code[i] = instruction;
 	}
 
-	for (simulator::instruction instr : code) {
-		cout << instr.label << "\t" << instr.displayName << "\tT: " << (int)instr.type << " OP: " << (int)instr.op
-			 << " rS: " << (ushort)instr.rS << " rT: " << (ushort)instr.rT << " rD: " << (ushort)instr.rD
-			 << " F: " << (ushort)instr.flags.mod << " IM: " << instr.im << " LabelOP: " << instr.labelOp << endl;
+	// Execution
+	for (int pc = 0; pc < codeSize; pc++) {
+		simulator::instruction instr = code[pc];
+
+		instr.execute(dataMem, regs, labelMap, pc);
+
+		string instrStr = instr.toString();
+		if (!instrStr.empty()) {
+			cout << instrStr << endl;
+		}
 	}
 
 	freeResources(); // Frees resources from the parser
