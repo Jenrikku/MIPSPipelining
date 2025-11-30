@@ -2,12 +2,8 @@
 
 namespace simulator
 {
-bool memory::add(varDef def)
+int memory::add(varDef def)
 {
-	if (labelMap.contains(def.label)) return false;
-
-	labelMap[def.label] = internalMem.size() - 1;
-
 	char dataSize;
 	switch (def.size) {
 		case simulator::dataSize::HALF:
@@ -25,10 +21,12 @@ bool memory::add(varDef def)
 		internalMem.resize(internalMem.size() + dataSize - mod, 0);
 	}
 
+	int index = internalMem.size() - 1;
+
 	if (def.type == simulator::varType::ARRAY) {
 		uint n = dataSize * def.value;
 		internalMem.resize(internalMem.size() + n, 0);
-		return true;
+		return index;
 	}
 
 	for (char i = 0; i < dataSize; i++) {
@@ -36,7 +34,7 @@ bool memory::add(varDef def)
 		internalMem.push_back(v);
 	}
 
-	return true;
+	return index;
 }
 
 void memory::shrink()

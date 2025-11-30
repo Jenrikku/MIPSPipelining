@@ -6,7 +6,8 @@ int main()
 {
 	uint line = 0;
 
-	simulator::memory mem;
+	simulator::memory dataMem;
+	int regs[32] = {};
 
 	vector<instruction> code = parse(&cin);
 
@@ -22,11 +23,10 @@ int main()
 			return -1;
 		}
 
-		mem.add(varDef);
-		cout << mem.size() << endl;
+		regs[varDef.reg] = dataMem.add(varDef);
 	}
 
-	mem.shrink();
+	dataMem.shrink();
 
 	// Instructions
 	for (; line < code.size(); line++) {
@@ -43,11 +43,11 @@ int main()
 			return -1;
 		}
 
-		cout << instruction.label << "\tT: " << (int)instruction.type << " OP:" << (int)instruction.op
-			 << " rS:" << (ushort)instruction.rS << " rT:" << (ushort)instruction.rT << " rD:" << (ushort)instruction.rD
-			 << " F:" << (ushort)instruction.flags.mod << " IM:" << instruction.im << " LabelOP:" << instruction.labelOp
-			 << endl;
+		cout << instruction.label << "\t" << instruction.displayName << "\tT: " << (int)instruction.type
+			 << " OP: " << (int)instruction.op << " rS: " << (ushort)instruction.rS << " rT: " << (ushort)instruction.rT
+			 << " rD: " << (ushort)instruction.rD << " F: " << (ushort)instruction.flags.mod
+			 << " IM: " << instruction.im << " LabelOP: " << instruction.labelOp << endl;
 	}
 
-	freeResources(); // Free resources from the parser
+	freeResources(); // Frees resources from the parser
 }

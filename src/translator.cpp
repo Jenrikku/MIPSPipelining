@@ -13,8 +13,8 @@ bool isVarDef(instruction &instr)
 
 bool toVarDef(instruction &instr, simulator::varDef &outRes, ostream &err)
 {
-	if (instr.label == nullptr) {
-		err << "Error: Variable definitions requires a label." << endl;
+	if (instr.label != nullptr) {
+		err << "Error: Variable definitions cannot have labels." << endl;
 		return false;
 	}
 
@@ -23,8 +23,8 @@ bool toVarDef(instruction &instr, simulator::varDef &outRes, ostream &err)
 		return false;
 	}
 
-	if (instr.rcount > 0 || instr.rlist != nullptr) {
-		err << "Error: Variable definitions cannot have registers." << endl;
+	if (instr.rcount != 1 || instr.rlist == nullptr) {
+		err << "Error: Variable definitions require one register to store address." << endl;
 		return false;
 	}
 
@@ -36,8 +36,15 @@ bool toVarDef(instruction &instr, simulator::varDef &outRes, ostream &err)
 		return false;
 	}
 
+	outRes.reg = instr.rlist[0];
+
+	if (outRes.reg > 31 || outRes.reg < 1) {
+		err << "Error: Variable definition refers to an invalid register: $" << (short)outRes.reg
+			<< ". Only registers from $1 to $31 are valid." << endl;
+		return false;
+	}
+
 	outRes.value = *(uint *)instr.op.ptr;
-	outRes.label = string(instr.label);
 
 	switch (name[2]) {
 		case 'F':
@@ -67,8 +74,8 @@ bool toVarDef(instruction &instr, simulator::varDef &outRes, ostream &err)
 				outRes.size = simulator::dataSize::BYTE;
 
 				if (outRes.type == simulator::varType::VAR && outRes.value != (uint8_t)outRes.value) {
-					err << "Warning: Variable " << outRes.label
-						<< " value's overflowed. Actual value (unsigned 8-bit): " << (outRes.value & 255) << endl;
+					err << "Warning: Variable overflowed. Actual value (unsigned 8-bit): " << (outRes.value & 255)
+						<< '.' << endl;
 				}
 
 				break;
@@ -77,8 +84,8 @@ bool toVarDef(instruction &instr, simulator::varDef &outRes, ostream &err)
 				outRes.size = simulator::dataSize::HALF;
 
 				if (outRes.type == simulator::varType::VAR && outRes.value != (uint16_t)outRes.value) {
-					err << "Warning: Variable " << outRes.label
-						<< " value's overflowed. Actual value (unsigned 16-bit): " << (uint16_t)outRes.value << endl;
+					err << "Warning: Variable overflowed. Actual value (unsigned 16-bit): " << (uint16_t)outRes.value
+						<< '.' << endl;
 				}
 
 				break;
@@ -87,7 +94,7 @@ bool toVarDef(instruction &instr, simulator::varDef &outRes, ostream &err)
 				break;
 
 			default:
-				err << "Error: Unknown variable data type for variable " << outRes.label << '.' << endl;
+				err << "Error: Unknown variable data type." << endl;
 				return false;
 		}
 	}
@@ -225,7 +232,7 @@ bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream &
 
 			outRes.rT = instr.rlist[0];
 
-			if (outRes.type == simulator::instrType::UNK) { // Not an store, so it's a load.
+			if (outRes.op == simulator::operation::NUL) { // Not an store, so it's a load.
 				outRes.op = simulator::operation::L;
 
 				if (outRes.rT == 0) {

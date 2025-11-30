@@ -1,6 +1,5 @@
 #include <concepts>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 using namespace std;
@@ -72,16 +71,15 @@ class instruction
 class varDef
 {
   public:
-	string label;
 	varType type;
 	dataSize size;
+	char reg; // Register to save the address
 	uint value;
 };
 
 class memory
 {
 	vector<char> internalMem;
-	unordered_map<string, uint> labelMap;
 
   public:
 	// Gets the value in memory at the given index or nullptr if out of bounds.
@@ -95,20 +93,8 @@ class memory
 		return &internalMem[idx];
 	}
 
-	// Gets the value in memory of the given label with an offset.
-	// Returns nullptr if the label was not found or the offset is out of bounds.
-	template <integral T> T *get(string label, int offset = 0)
-	{
-		if (!labelMap.contains(label)) return nullptr;
-
-		uint idx = labelMap[label], start = idx + offset, end = start + sizeof(T);
-		if (start < 0 || internalMem.size() < end) return nullptr;
-
-		return &internalMem[start];
-	}
-
-	// Adds the variable to memory. Returns false if the label is already in use.
-	bool add(varDef def);
+	// Adds the variable to memory. Returns the resulting index in memory.
+	int add(varDef def);
 
 	// Frees unused memory. Should be called after all variables have been added.
 	void shrink();
