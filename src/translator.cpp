@@ -214,6 +214,11 @@ bool toInstruction(instruction &instr, simulator::instruction &outRes, ostream &
 	outRes.type = simulator::instrType::UNK;
 	outRes.op = simulator::operation::NUL;
 
+	// Set all registers to -1 (mark as unused) by default.
+	outRes.rS = -1;
+	outRes.rT = -1;
+	outRes.rD = -1;
+
 	switch (name[0]) {
 		indirect indir;
 

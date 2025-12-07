@@ -48,6 +48,12 @@ enum struct dataSize : char { WORD = 0, BYTE, HALF };
 
 enum struct opMod : char { NONE = 0, IMMEDIATE, UNSIGNED, IMMEDIATE_UNSIGNED };
 
+enum struct pipPhase : char { NONE = 0, FECTH = 1, DECODE = 2, EXECUTE = 3, MEMORY = 4, WRITEBACK = 5 };
+
+enum struct regType : char { NONE = 0, RS, RT, RD };
+
+enum struct forwardingType : char { NONE = 0, FULL, ALU };
+
 class varDef
 {
   public:
@@ -93,6 +99,7 @@ class instruction
 	instrType type;
 	operation op;
 
+	// Registers can be a number between 0 and 31 or -1 if unused.
 	reg rS; // Operand 1
 	reg rT; // Operand 2 or result
 	reg rD; // Result
@@ -106,6 +113,18 @@ class instruction
 	string labelOp;
 
 	void execute(memory &mem, int regs[], unordered_map<string, int> &labelMap, int &pc);
+
+	// Returns the first pipeline phase where the value is rS is needed.
+	pipPhase calcRSNeeded();
+
+	// Returns the first pipeline phase where the value is rT is needed.
+	pipPhase calcRTNeeded();
+
+	// Returns the first pipeline phase where the result is ready. (At the end of the phase)
+	pipPhase calcResultDone();
+
+	// Returns in which register the result is written.
+	regType getRegWritten();
 
 	string toString();
 };

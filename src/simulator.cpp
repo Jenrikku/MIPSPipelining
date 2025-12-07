@@ -192,6 +192,68 @@ void instruction::execute(memory &mem, int regs[], unordered_map<string, int> &l
 	if (jump) pc = labelMap[labelOp] - 1; // - 1 because it increments after every instruction
 }
 
+pipPhase instruction::calcRSNeeded()
+{
+	switch (type) {
+		case instrType::R3:
+		case instrType::R2:
+		case instrType::MEM:
+		case instrType::BRA2:
+		case instrType::BRA1:
+			return pipPhase::EXECUTE;
+
+		default:
+			return pipPhase::NONE;
+	}
+}
+
+pipPhase instruction::calcRTNeeded()
+{
+	switch (type) {
+		case instrType::R3:
+		case instrType::BRA2:
+			return pipPhase::EXECUTE;
+
+		case instrType::MEM:
+			return op == operation::S ? pipPhase::MEMORY : pipPhase::NONE;
+
+		default:
+			return pipPhase::NONE;
+	}
+}
+
+pipPhase instruction::calcResultDone()
+{
+	switch (type) {
+		case instrType::R3:
+		case instrType::R2:
+			return pipPhase::EXECUTE;
+
+		case instrType::MEM:
+			return op == operation::L ? pipPhase::MEMORY : pipPhase::NONE;
+
+		default:
+			return pipPhase::NONE;
+	}
+}
+
+regType instruction::getRegWritten()
+{
+	switch (type) {
+		case instrType::R3:
+			return regType::RD;
+
+		case instrType::R2:
+			return regType::RT;
+
+		case instrType::MEM:
+			return op == operation::L ? regType::RT : regType::NONE;
+
+		default:
+			return regType::NONE;
+	}
+}
+
 string instruction::toString()
 {
 	if (type == instrType::UNK || type == instrType::SNOP) return "";
