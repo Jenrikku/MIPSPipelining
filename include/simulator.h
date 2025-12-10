@@ -54,6 +54,8 @@ enum struct regType : char { NONE = 0, RS, RT, RD };
 
 enum struct forwardingType : char { NONE = 0, FULL, ALU };
 
+enum struct branchPredType : char { NONE = 0, PERFECT, TAKEN, NOT_TAKEN };
+
 class varDef
 {
   public:

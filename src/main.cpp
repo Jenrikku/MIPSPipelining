@@ -1,22 +1,113 @@
 #include "translator.h"
+#include <fstream>
+#include <getopt.h>
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
-int main()
+int main(int argc, char *argv[])
 {
+	// Parse arguments
+	ifstream iFile;
+	ofstream oFile;
+	bool useRegularNOPs = false;
+	simulator::forwardingType forwarding = simulator::forwardingType::NONE;
+	simulator::branchPredType branchPred = simulator::branchPredType::NONE;
+
+	int opt, optidx = 0;
+	static struct option long_options[] = {{"input", required_argument, nullptr, 'i'},
+										   {"output", required_argument, nullptr, 'o'},
+										   {"nops", no_argument, nullptr, 'n'},
+										   {"forwarding", optional_argument, nullptr, 'f'},
+										   {"branch", required_argument, nullptr, 'b'},
+										   {"help", no_argument, nullptr, 'h'},
+										   {nullptr, 0, nullptr, 0}};
+
+	while ((opt = getopt_long(argc, argv, "hnbf::i:o:", long_options, &optidx)) != -1) {
+		switch (opt) {
+			case 'i':
+				iFile = ifstream(optarg);
+				if (!iFile.is_open()) {
+					cerr << "Error: File " << optarg << " does not exist or cannot be opened." << endl;
+					return -1;
+				}
+
+				break;
+
+			case 'o':
+				oFile = ofstream(optarg);
+				if (!oFile.is_open()) {
+					cerr << "Error: File " << optarg << " could not be opened for writing." << endl;
+					return -1;
+				}
+
+				break;
+
+			case 'n':
+				useRegularNOPs = true;
+				break;
+
+			case 'f': {
+				string arg = string(optarg);
+				if (arg.empty() || arg == "full") {
+					forwarding = simulator::forwardingType::FULL;
+				} else if (arg == "alu") {
+					forwarding = simulator::forwardingType::ALU;
+				} else if (arg != "no") {
+					cerr << "Error: Unknown forwarding type " << arg << endl;
+					return -1;
+				}
+
+				break;
+			}
+
+			case 'b': {
+				string arg = string(optarg);
+				if (arg == "p") {
+					branchPred = simulator::branchPredType::PERFECT;
+				} else if (arg == "t") {
+					branchPred = simulator::branchPredType::TAKEN;
+				} else if (arg == "nt") {
+					branchPred = simulator::branchPredType::NOT_TAKEN;
+				} else if (arg != "no") {
+					cerr << "Error: Unknown branch prediction type " << arg << endl;
+					return -1;
+				}
+
+				break;
+			}
+
+			case 'h':
+				cout << "MIPS Pipeline Simulator Options\n"
+						"\t-i --input\t\t\tSpecify the input file to read from.\n"
+						"\t-o --output\t\t\tSpecify the ouput file to write to.\n"
+						"\t-n --nops\t\t\tAdds NOPs to the resulting code rather than printing the time map.\n"
+						"\t-f --forwarding [no|alu|full]\tChoose between the following forwarding options:\n"
+						"\t\t* no: No forwarding.\n\t\t* alu: Only ALU-ALU (EX to EX) forwarding.\n"
+						"\t\t* full: Full forwarding.\n"
+						"\t-b --branch [no|p|t|nt]\tChoose between the following branch prediction options:\n"
+						"\t\t* no: No branch prediction.\n\t\t* p: Perfect branch prediction.\n"
+						"\t\t* t: Always predict as taken.\n\t\t* nt: Always predict as not taken.\n"
+						"\nNote that if no input/output file is specified then the standard input/output will be used."
+					 << endl;
+
+				return 0;
+
+			case '?': // getopt_long handles error printing
+				return -1;
+		}
+	}
+
+	if (iFile.is_open()) cin.rdbuf(iFile.rdbuf());
+	if (oFile.is_open()) cout.rdbuf(oFile.rdbuf());
+
 	uint line = 0;
 
 	simulator::memory dataMem;
 	int regs[32] = {};
 
 	vector<instruction> instrs = parse(&cin);
-	simulator::forwardingType forwarding = simulator::forwardingType::NONE;
-	// TO-DO: Read forwarding type from argument flag.
-
-	bool useRegularNOPs = false;
-	// TO-DO: Read NOP type from argument flag.
 
 	// Variable declarations
 	for (; line < instrs.size(); line++) {
