@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
 	ifstream iFile;
 	ofstream oFile;
 	bool useRegularNOPs = false;
+	uint instrLimit = 256; // Instruction limit (to prevent infinite loops)
 	simulator::forwardingType forwarding = simulator::forwardingType::NONE;
 	simulator::branchPredType branchPred = simulator::branchPredType::NONE;
 
@@ -19,12 +20,13 @@ int main(int argc, char *argv[])
 	static struct option long_options[] = {{"input", required_argument, nullptr, 'i'},
 										   {"output", required_argument, nullptr, 'o'},
 										   {"nops", no_argument, nullptr, 'n'},
+										   {"unlimited", no_argument, nullptr, 'u'},
 										   {"forwarding", optional_argument, nullptr, 'f'},
 										   {"branch", required_argument, nullptr, 'b'},
 										   {"help", no_argument, nullptr, 'h'},
 										   {nullptr, 0, nullptr, 0}};
 
-	while ((opt = getopt_long(argc, argv, "hnbf::i:o:", long_options, &optidx)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hnuf::b:i:o:", long_options, &optidx)) != -1) {
 		switch (opt) {
 			case 'i':
 				iFile = ifstream(optarg);
@@ -46,6 +48,10 @@ int main(int argc, char *argv[])
 
 			case 'n':
 				useRegularNOPs = true;
+				break;
+
+			case 'u':
+				instrLimit = UINT32_MAX;
 				break;
 
 			case 'f': {
@@ -83,6 +89,7 @@ int main(int argc, char *argv[])
 						"\t-i --input\t\t\tSpecify the input file to read from.\n"
 						"\t-o --output\t\t\tSpecify the ouput file to write to.\n"
 						"\t-n --nops\t\t\tAdds NOPs to the resulting code rather than printing the time map.\n"
+						"\t-u --unlimited\t\t\tDisables hard limit on amount of executed instructions.\n"
 						"\t-f --forwarding [no|alu|full]\tChoose between the following forwarding options:\n"
 						"\t\t* no: No forwarding.\n\t\t* alu: Only ALU-ALU (EX to EX) forwarding.\n"
 						"\t\t* full: Full forwarding.\n"
@@ -179,10 +186,12 @@ int main(int argc, char *argv[])
 	bool lastSNOP = false; // Used for ALU-ALU forwarding.
 
 	// Execution
-	for (int pc = 0; pc < codeSize; pc++) {
+	for (uint pc = 0; pc < codeSize; pc++) {
 
-		// TO-DO: Add hard limit on number of instructions
-		//        Maybe add a flag to disable it.
+		if (executedCode.size() > instrLimit) {
+			cerr << "Instruction limit reached. Check for infinite loops." << endl;
+			return -1;
+		}
 
 		for (int i = 0; i < 32; i++) {
 			if (regBusy[i] > 0) --regBusy[i];
@@ -218,9 +227,6 @@ int main(int argc, char *argv[])
 		}
 
 		if (addNOP) {
-			// cout << (int)rSPhase << ' ' << (int)regBusy[instr.rS] << ' ' << (int)rTPhase << ' '
-			// 	 << (int)regBusy[instr.rT] << endl;
-
 			simulator::instrType nopType = useRegularNOPs ? simulator::instrType::NOP : simulator::instrType::SNOP;
 			executedCode.push_back({.displayName = "NOP", .type = nopType, .op = simulator::operation::NONE});
 

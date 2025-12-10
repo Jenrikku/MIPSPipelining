@@ -43,7 +43,7 @@ void memory::shrink()
 	internalMem.shrink_to_fit();
 }
 
-void instruction::execute(memory &mem, int regs[], unordered_map<string, int> &labelMap, int &pc)
+void instruction::execute(memory &mem, int regs[], unordered_map<string, int> &labelMap, uint &pc)
 {
 	if (type == instrType::UNK || type == instrType::NOP || type == instrType::SNOP || op == operation::NUL) return;
 

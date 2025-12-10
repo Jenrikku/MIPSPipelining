@@ -114,7 +114,7 @@ class instruction
 	short im;
 	string labelOp;
 
-	void execute(memory &mem, int regs[], unordered_map<string, int> &labelMap, int &pc);
+	void execute(memory &mem, int regs[], unordered_map<string, int> &labelMap, uint &pc);
 
 	// Returns the first pipeline phase where the value is rS is needed.
 	pipPhase calcRSNeeded();
