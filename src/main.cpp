@@ -1,6 +1,7 @@
 #include "translator.h"
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 int main()
@@ -11,10 +12,10 @@ int main()
 	int regs[32] = {};
 
 	vector<instruction> instrs = parse(&cin);
-	simulator::forwardingType forwarding = simulator::forwardingType::ALU;
+	simulator::forwardingType forwarding = simulator::forwardingType::NONE;
 	// TO-DO: Read forwarding type from argument flag.
 
-	bool useRegularNOPs = true;
+	bool useRegularNOPs = false;
 	// TO-DO: Read NOP type from argument flag.
 
 	// Variable declarations
@@ -73,6 +74,8 @@ int main()
 
 		code[i] = instruction;
 	}
+
+	freeResources(); // Frees resources from the parser
 
 	vector<simulator::instruction> executedCode;
 
@@ -162,10 +165,55 @@ int main()
 		regDirty[regWrittenIdx] = (char)simulator::pipPhase::WRITEBACK - 2; // minus F & WB
 	}
 
-	for (simulator::instruction instr : executedCode) {
-		string instrStr = instr.toString();
-		if (!instrStr.empty()) cout << instrStr << endl;
-	}
+	uint pos = 0; // Position of the cursor in the time map.
+	uint fetchpos = 0; // Position of the next fetch (first phase) in the time map.
+	unordered_set<int> stalls; // Set of stalls already placed in the time map.
 
-	freeResources(); // Frees resources from the parser
+	int lasti = -1; // Stores last instruction that was not an SNOP.
+
+	auto printPhase = [&pos, &stalls](char phase) {
+		while (stalls.contains(pos++)) {
+			cout << "   ";
+		}
+
+		cout << phase << "  ";
+	};
+
+	for (uint i = 0; i < executedCode.size(); i++) {
+		simulator::instruction instr = executedCode[i];
+		string instrStr = instr.toString();
+		if (instrStr.empty()) continue;
+
+		cout << instrStr;
+		if (useRegularNOPs) {
+			cout << endl;
+			continue;
+		}
+
+		cout << "\t\t";
+
+		// Stalls before decoding phase.
+		bool stallsDec = forwarding != simulator::forwardingType::FULL;
+
+		for (int i = 0; i < pos; i++)
+			cout << "   ";
+
+		printPhase('F');
+		fetchpos = pos;
+		if (!stallsDec) printPhase('D');
+
+		if (lasti >= 0)
+			for (int j = lasti + 1; executedCode[j].type == simulator::instrType::SNOP && j < executedCode.size();
+				 j++) {
+
+				cout << "S  ";
+				stalls.insert(pos++);
+			}
+
+		if (stallsDec) printPhase('D');
+
+		cout << "X  M  W" << endl;
+		pos = fetchpos;
+		lasti = i;
+	}
 }
