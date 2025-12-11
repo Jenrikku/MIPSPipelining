@@ -304,6 +304,7 @@ int main(int argc, char *argv[])
 
 	uint pos = 0; // Position of the cursor in the time map.
 	uint fetchpos = 0; // Position of the next fetch (first phase) in the time map.
+	uint lastpos = 0; // Position of the last phase in the map (used for counting cycles).
 	unordered_set<int> stalls; // Set of stalls already placed in the time map.
 
 	int lasti = -1; // Stores last instruction that was not an SNOP.
@@ -360,8 +361,11 @@ int main(int argc, char *argv[])
 		}
 
 		cout << "X  M  W" << endl;
+		lastpos = pos + 3;
 		pos = fetchpos;
 		lasti = i;
 		lastBranch = instr.type == simulator::instrType::BRA1 || instr.type == simulator::instrType::BRA2;
 	}
+
+	if (!useRegularNOPs) cout << "\nCycles: " << lastpos << endl;
 }
