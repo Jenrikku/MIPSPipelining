@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
 	ofstream oFile;
 	bool useRegularNOPs = false;
 	bool branchInDec = false;
+	bool useTabs = false;
 	uint instrLimit = 256; // Instruction limit (to prevent infinite loops)
 	simulator::forwardingType forwarding = simulator::forwardingType::NONE;
 	simulator::branchPredType branchPred = simulator::branchPredType::NONE;
@@ -23,12 +24,13 @@ int main(int argc, char *argv[])
 										   {"nops", no_argument, nullptr, 'n'},
 										   {"branch-in-dec", no_argument, nullptr, 'd'},
 										   {"unlimited", no_argument, nullptr, 'u'},
+										   {"tabs", no_argument, nullptr, 't'},
 										   {"forwarding", optional_argument, nullptr, 'f'},
 										   {"branch", required_argument, nullptr, 'b'},
 										   {"help", no_argument, nullptr, 'h'},
 										   {nullptr, 0, nullptr, 0}};
 
-	while ((opt = getopt_long(argc, argv, "hnudf::b:i:o:", long_options, &optidx)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hnutdf::b:i:o:", long_options, &optidx)) != -1) {
 		switch (opt) {
 			case 'i':
 				iFile = ifstream(optarg);
@@ -54,6 +56,10 @@ int main(int argc, char *argv[])
 
 			case 'd':
 				branchInDec = true;
+				break;
+
+			case 't':
+				useTabs = true;
 				break;
 
 			case 'u':
@@ -97,6 +103,7 @@ int main(int argc, char *argv[])
 						"\t-n --nops\t\t\tAdds NOPs to the resulting code rather than printing the time map.\n"
 						"\t-d --branch-in-dec\t\tBranch jump address is calculated in the decode phase.\n"
 						"\t-u --unlimited\t\t\tDisables hard limit on amount of executed instructions.\n"
+						"\t-t --tabs\t\t\tUse tabs instead of spaces for separating pipeline phases.\n"
 						"\t-f --forwarding [no|alu|full]\tChoose between the following forwarding options:\n"
 						"\t\t* no: No forwarding.\n\t\t* alu: Only ALU-ALU (EX to EX) forwarding.\n"
 						"\t\t* full: Full forwarding.\n"
@@ -311,12 +318,12 @@ int main(int argc, char *argv[])
 
 	bool lastBranch = false; // Last instruction was a branch.
 
-	auto printPhase = [&pos, &stalls](char phase) {
+	auto printPhase = [&pos, &stalls, useTabs](char phase) {
 		while (stalls.contains(pos++)) {
-			cout << "   ";
+			cout << (useTabs ? "\t" : "   ");
 		}
 
-		cout << phase << "  ";
+		cout << phase << (useTabs ? "\t" : "  ");
 	};
 
 	for (uint i = 0; i < executedCode.size(); i++) {
@@ -336,7 +343,7 @@ int main(int argc, char *argv[])
 		bool stallsDec = forwarding != simulator::forwardingType::FULL;
 
 		for (int i = 0; i < pos; i++)
-			cout << "   ";
+			cout << (useTabs ? "\t" : "   ");
 
 		if (!lastBranch) printPhase('F');
 
@@ -349,7 +356,7 @@ int main(int argc, char *argv[])
 			for (int j = lasti + 1; executedCode[j].type == simulator::instrType::SNOP && j < executedCode.size();
 				 j++) {
 
-				cout << "S  ";
+				cout << (useTabs ? "S\t" : "S  ");
 				stalls.insert(pos++);
 			}
 
@@ -360,7 +367,7 @@ int main(int argc, char *argv[])
 			fetchpos = pos - 1;
 		}
 
-		cout << "X  M  W" << endl;
+		cout << (useTabs ? "X\tM\tW" : "X  M  W") << endl;
 		lastpos = pos + 3;
 		pos = fetchpos;
 		lasti = i;
