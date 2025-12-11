@@ -337,12 +337,12 @@ int main(int argc, char *argv[])
 		for (int i = 0; i < pos; i++)
 			cout << "   ";
 
-		if (!lastBranch) {
-			printPhase('F');
-			fetchpos = pos;
-		}
+		if (!lastBranch) printPhase('F');
 
-		if (!stallsDec && !lastBranch) printPhase('D');
+		if (!stallsDec && !lastBranch) {
+			printPhase('D');
+			fetchpos = pos - 1;
+		}
 
 		if (lasti >= 0)
 			for (int j = lasti + 1; executedCode[j].type == simulator::instrType::SNOP && j < executedCode.size();
@@ -352,12 +352,12 @@ int main(int argc, char *argv[])
 				stalls.insert(pos++);
 			}
 
-		if (lastBranch) {
-			printPhase('F');
-			fetchpos = pos;
-		}
+		if (lastBranch) printPhase('F');
 
-		if (stallsDec || lastBranch) printPhase('D');
+		if (stallsDec || lastBranch) {
+			printPhase('D');
+			fetchpos = pos - 1;
+		}
 
 		cout << "X  M  W" << endl;
 		pos = fetchpos;
