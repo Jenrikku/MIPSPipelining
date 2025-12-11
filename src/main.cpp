@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
 	ifstream iFile;
 	ofstream oFile;
 	bool useRegularNOPs = false;
+	bool branchInDec = false;
 	uint instrLimit = 256; // Instruction limit (to prevent infinite loops)
 	simulator::forwardingType forwarding = simulator::forwardingType::NONE;
 	simulator::branchPredType branchPred = simulator::branchPredType::NONE;
@@ -20,13 +21,14 @@ int main(int argc, char *argv[])
 	static struct option long_options[] = {{"input", required_argument, nullptr, 'i'},
 										   {"output", required_argument, nullptr, 'o'},
 										   {"nops", no_argument, nullptr, 'n'},
+										   {"branch-in-dec", no_argument, nullptr, 'd'},
 										   {"unlimited", no_argument, nullptr, 'u'},
 										   {"forwarding", optional_argument, nullptr, 'f'},
 										   {"branch", required_argument, nullptr, 'b'},
 										   {"help", no_argument, nullptr, 'h'},
 										   {nullptr, 0, nullptr, 0}};
 
-	while ((opt = getopt_long(argc, argv, "hnuf::b:i:o:", long_options, &optidx)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hnudf::b:i:o:", long_options, &optidx)) != -1) {
 		switch (opt) {
 			case 'i':
 				iFile = ifstream(optarg);
@@ -50,12 +52,16 @@ int main(int argc, char *argv[])
 				useRegularNOPs = true;
 				break;
 
+			case 'd':
+				branchInDec = true;
+				break;
+
 			case 'u':
 				instrLimit = UINT32_MAX;
 				break;
 
 			case 'f': {
-				string arg = string(optarg);
+				string arg = optarg ? string(optarg) : "";
 				if (arg.empty() || arg == "full") {
 					forwarding = simulator::forwardingType::FULL;
 				} else if (arg == "alu") {
@@ -89,6 +95,7 @@ int main(int argc, char *argv[])
 						"\t-i --input\t\t\tSpecify the input file to read from.\n"
 						"\t-o --output\t\t\tSpecify the ouput file to write to.\n"
 						"\t-n --nops\t\t\tAdds NOPs to the resulting code rather than printing the time map.\n"
+						"\t-d --branch-in-dec\t\tBranch jump address is calculated in the decode phase.\n"
 						"\t-u --unlimited\t\t\tDisables hard limit on amount of executed instructions.\n"
 						"\t-f --forwarding [no|alu|full]\tChoose between the following forwarding options:\n"
 						"\t\t* no: No forwarding.\n\t\t* alu: Only ALU-ALU (EX to EX) forwarding.\n"
@@ -226,10 +233,11 @@ int main(int argc, char *argv[])
 				break;
 		}
 
-		if (addNOP) {
-			simulator::instrType nopType = useRegularNOPs ? simulator::instrType::NOP : simulator::instrType::SNOP;
-			executedCode.push_back({.displayName = "NOP", .type = nopType, .op = simulator::operation::NONE});
+		simulator::instrType nopType = useRegularNOPs ? simulator::instrType::NOP : simulator::instrType::SNOP;
+		simulator::instruction nop = {.displayName = "NOP", .type = nopType, .op = simulator::operation::NONE};
 
+		if (addNOP) {
+			executedCode.push_back(nop);
 			lastSNOP = true;
 			--pc;
 			continue;
@@ -237,8 +245,40 @@ int main(int argc, char *argv[])
 
 		lastSNOP = false;
 
+		uint lastpc = pc;
+
 		instr.execute(dataMem, regs, labelMap, pc);
 		executedCode.push_back(instr);
+
+		if (instr.type == simulator::instrType::BRA1 || instr.type == simulator::instrType::BRA2) {
+			bool taken = lastpc != pc;
+
+			switch (branchPred) {
+				case simulator::branchPredType::NONE:
+					executedCode.push_back(nop);
+					if (!branchInDec) executedCode.push_back(nop);
+					break;
+
+				case simulator::branchPredType::TAKEN:
+					if (!taken) {
+						executedCode.push_back(nop);
+						if (!branchInDec) executedCode.push_back(nop);
+					}
+					break;
+
+				case simulator::branchPredType::NOT_TAKEN:
+					if (taken) {
+						executedCode.push_back(nop);
+						if (!branchInDec) executedCode.push_back(nop);
+					}
+					break;
+
+				default:
+					break;
+			}
+
+			continue;
+		}
 
 		char regWrittenIdx = -1;
 
@@ -268,6 +308,8 @@ int main(int argc, char *argv[])
 
 	int lasti = -1; // Stores last instruction that was not an SNOP.
 
+	bool lastBranch = false; // Last instruction was a branch.
+
 	auto printPhase = [&pos, &stalls](char phase) {
 		while (stalls.contains(pos++)) {
 			cout << "   ";
@@ -295,9 +337,12 @@ int main(int argc, char *argv[])
 		for (int i = 0; i < pos; i++)
 			cout << "   ";
 
-		printPhase('F');
-		fetchpos = pos;
-		if (!stallsDec) printPhase('D');
+		if (!lastBranch) {
+			printPhase('F');
+			fetchpos = pos;
+		}
+
+		if (!stallsDec && !lastBranch) printPhase('D');
 
 		if (lasti >= 0)
 			for (int j = lasti + 1; executedCode[j].type == simulator::instrType::SNOP && j < executedCode.size();
@@ -307,10 +352,16 @@ int main(int argc, char *argv[])
 				stalls.insert(pos++);
 			}
 
-		if (stallsDec) printPhase('D');
+		if (lastBranch) {
+			printPhase('F');
+			fetchpos = pos;
+		}
+
+		if (stallsDec || lastBranch) printPhase('D');
 
 		cout << "X  M  W" << endl;
 		pos = fetchpos;
 		lasti = i;
+		lastBranch = instr.type == simulator::instrType::BRA1 || instr.type == simulator::instrType::BRA2;
 	}
 }
