@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 			case 'h':
 				cout << "MIPS Pipeline Simulator Options\n"
 						"\t-i --input\t\t\tSpecify the input file to read from.\n"
-						"\t-o --output\t\t\tSpecify the ouput file to write to.\n"
+						"\t-o --output\t\t\tSpecify the output file to write to.\n"
 						"\t-n --nops\t\t\tAdds NOPs to the resulting code rather than printing the time map.\n"
 						"\t-d --branch-in-dec\t\tBranch jump address is calculated in the decode phase.\n"
 						"\t-u --unlimited\t\t\tDisables hard limit on amount of executed instructions.\n"
@@ -110,7 +110,8 @@ int main(int argc, char *argv[])
 						"\t-b --branch [no|p|t|nt]\tChoose between the following branch prediction options:\n"
 						"\t\t* no: No branch prediction.\n\t\t* p: Perfect branch prediction.\n"
 						"\t\t* t: Always predict as taken.\n\t\t* nt: Always predict as not taken.\n"
-						"\nNote that if no input/output file is specified then the standard input/output will be used."
+						"\nNote that if no input/output file is specified then the standard input/output will be used.\n"
+						"If the forwarding option (-f) is used but no additional value is passed then full forwarding will be used."
 					 << endl;
 
 				return 0;
