@@ -3,6 +3,10 @@
 #include <unordered_map>
 #include <vector>
 
+#if WINNT
+typedef unsigned int uint;
+#endif
+
 using namespace std;
 
 namespace simulator

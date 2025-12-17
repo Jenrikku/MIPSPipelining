@@ -61,6 +61,9 @@ void parser::freeResources() {
 					delete (indirect *)instr.op.ptr;
 					break;
 
+				default:
+					break;
+
 				// Note: Labels were already freed.
 			}
 		}
