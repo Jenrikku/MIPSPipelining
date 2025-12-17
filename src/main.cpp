@@ -97,22 +97,24 @@ int main(int argc, char *argv[])
 			}
 
 			case 'h':
-				cout << "MIPS Pipeline Simulator Options\n"
-						"\t-i --input\t\t\tSpecify the input file to read from.\n"
-						"\t-o --output\t\t\tSpecify the output file to write to.\n"
-						"\t-n --nops\t\t\tAdds NOPs to the resulting code rather than printing the time map.\n"
-						"\t-d --branch-in-dec\t\tBranch jump address is calculated in the decode phase.\n"
-						"\t-u --unlimited\t\t\tDisables hard limit on amount of executed instructions.\n"
-						"\t-t --tabs\t\t\tUse tabs instead of spaces for separating pipeline phases.\n"
-						"\t-f --forwarding [no|alu|full]\tChoose between the following forwarding options:\n"
-						"\t\t* no: No forwarding.\n\t\t* alu: Only ALU-ALU (EX to EX) forwarding.\n"
-						"\t\t* full: Full forwarding.\n"
-						"\t-b --branch [no|p|t|nt]\tChoose between the following branch prediction options:\n"
-						"\t\t* no: No branch prediction.\n\t\t* p: Perfect branch prediction.\n"
-						"\t\t* t: Always predict as taken.\n\t\t* nt: Always predict as not taken.\n"
-						"\nNote that if no input/output file is specified then the standard input/output will be used.\n"
-						"If the forwarding option (-f) is used but no additional value is passed then full forwarding will be used."
-					 << endl;
+				cout
+					<< "MIPS Pipeline Simulator Options\n"
+					   "\t-i --input\t\t\tSpecify the input file to read from.\n"
+					   "\t-o --output\t\t\tSpecify the output file to write to.\n"
+					   "\t-n --nops\t\t\tAdds NOPs to the resulting code rather than printing the diagram.\n"
+					   "\t-d --branch-in-dec\t\tBranch jump address is calculated in the decode phase.\n"
+					   "\t-u --unlimited\t\t\tDisables hard limit on amount of executed instructions.\n"
+					   "\t-t --tabs\t\t\tUse tabs instead of spaces for separating pipeline phases.\n"
+					   "\t-f --forwarding [no|alu|full]\tChoose between the following forwarding options:\n"
+					   "\t\t* no: No forwarding.\n\t\t* alu: Only ALU-ALU (EX to EX) forwarding.\n"
+					   "\t\t* full: Full forwarding.\n"
+					   "\t-b --branch [no|p|t|nt]\tChoose between the following branch prediction options:\n"
+					   "\t\t* no: No branch prediction.\n\t\t* p: Perfect branch prediction.\n"
+					   "\t\t* t: Always predict as taken.\n\t\t* nt: Always predict as not taken.\n"
+					   "\nNote that if no input/output file is specified then the standard input/output will be used.\n"
+					   "If the forwarding option (-f) is used but no additional value is passed then full forwarding "
+					   "will be used."
+					<< endl;
 
 				return 0;
 
@@ -310,10 +312,10 @@ int main(int argc, char *argv[])
 		regDirty[regWrittenIdx] = (char)simulator::pipPhase::WRITEBACK - 2; // minus F & WB
 	}
 
-	uint pos = 0; // Position of the cursor in the time map.
-	uint fetchpos = 0; // Position of the next fetch (first phase) in the time map.
+	uint pos = 0; // Position of the cursor in the pipeline diagram.
+	uint fetchpos = 0; // Position of the next fetch (first phase) in the pipeline diagram.
 	uint lastpos = 0; // Position of the last phase in the map (used for counting cycles).
-	unordered_set<int> stalls; // Set of stalls already placed in the time map.
+	unordered_set<int> stalls; // Set of stalls already placed in the pipeline diagram.
 
 	int lasti = -1; // Stores last instruction that was not an SNOP.
 
