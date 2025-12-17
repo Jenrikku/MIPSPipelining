@@ -179,14 +179,6 @@ int main(int argc, char *argv[])
 			labelMap[instruction.label] = i;
 		}
 
-		if (!instruction.labelOp.empty()) {
-			if (!labelMap.contains(instruction.labelOp)) {
-				cerr << "Error: reference to unknown label " << instruction.labelOp << " in instruction " << line + 1
-					 << endl;
-				return -1;
-			}
-		}
-
 		code[i] = instruction;
 	}
 
@@ -216,6 +208,13 @@ int main(int argc, char *argv[])
 		}
 
 		simulator::instruction instr = code[pc];
+
+		if (!instr.labelOp.empty()) {
+			if (!labelMap.contains(instr.labelOp)) {
+				cerr << "Error: reference to unknown label " << instr.labelOp << " in instruction " << line + 1 << endl;
+				return -1;
+			}
+		}
 
 		simulator::pipPhase rSPhase = instr.calcRSNeeded();
 		simulator::pipPhase rTPhase = instr.calcRTNeeded();
@@ -290,6 +289,11 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
+		if (instr.type == simulator::instrType::J) {
+			executedCode.push_back(nop);
+			continue;
+		}
+
 		char regWrittenIdx = -1;
 
 		switch (instr.getRegWritten()) {
@@ -341,6 +345,7 @@ int main(int argc, char *argv[])
 		}
 
 		cout << "\t\t";
+		if (instr.type == simulator::instrType::J || instr.type == simulator::instrType::NOP) cout << '\t';
 
 		// Stalls before decoding phase.
 		bool stallsDec = forwarding != simulator::forwardingType::FULL;
@@ -374,7 +379,8 @@ int main(int argc, char *argv[])
 		lastpos = pos + 3;
 		pos = fetchpos;
 		lasti = i;
-		lastBranch = instr.type == simulator::instrType::BRA1 || instr.type == simulator::instrType::BRA2;
+		lastBranch = instr.type == simulator::instrType::BRA1 || instr.type == simulator::instrType::BRA2 ||
+					 instr.type == simulator::instrType::J;
 	}
 
 	if (!useRegularNOPs) cout << "\nCycles: " << lastpos << endl;
