@@ -254,11 +254,17 @@ regType instruction::getRegWritten()
 	}
 }
 
-string instruction::toString()
+string instruction::toString(uint minCol)
 {
 	if (type == instrType::UNK || type == instrType::SNOP) return "";
 
-	string res = (label.empty() ? "\t" : label + ":\t") + displayName + ' ';
+	uint labellen = label.length();
+	uint addedSpaces = labellen <= minCol ? minCol - labellen : labellen; // Prevent number overflow
+
+	string res = (label.empty() ? " " : label + ':');
+	res.append(addedSpaces + 2, ' ');
+
+	res += displayName + ' ';
 
 	switch (type) {
 		case instrType::R3:

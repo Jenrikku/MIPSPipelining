@@ -132,6 +132,8 @@ class instruction
 	// Returns in which register the result is written.
 	regType getRegWritten();
 
-	string toString();
+	// Transforms the instruction to a string, starting the instruction portion (after label)
+	// in at least the given column.
+	string toString(uint minCol);
 };
 } // namespace simulator

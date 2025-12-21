@@ -154,6 +154,10 @@ int main(int argc, char *argv[])
 	simulator::instruction code[codeSize];
 	unordered_map<string, int> labelMap;
 
+	// Saves in what column the instructions start to be printed.
+	// This is done to align to all labels correctly.
+	uint instrcol = 0;
+
 	// Instructions
 	for (int i = 0; line < instrs.size(); line++, i++) {
 		instruction instr = instrs[line];
@@ -177,12 +181,25 @@ int main(int argc, char *argv[])
 			}
 
 			labelMap[instruction.label] = i;
+
+			uint labellen = instruction.label.length();
+			if (instrcol < labellen) instrcol = labellen;
 		}
 
 		code[i] = instruction;
 	}
 
 	freeResources(); // Frees resources from the parser
+
+	// Saves in what column the pipeline diagram will start.
+	// Similar to instrcol, this is done to properly align it in all lines.
+	uint diagramStart = 0;
+
+	if (!useRegularNOPs)
+		for (simulator::instruction instr : code) {
+			uint instrlen = instr.toString(instrcol).length();
+			if (diagramStart < instrlen) diagramStart = instrlen;
+		}
 
 	vector<simulator::instruction> executedCode;
 
@@ -335,7 +352,7 @@ int main(int argc, char *argv[])
 
 	for (uint i = 0; i < executedCode.size(); i++) {
 		simulator::instruction instr = executedCode[i];
-		string instrStr = instr.toString();
+		string instrStr = instr.toString(instrcol);
 		if (instrStr.empty()) continue;
 
 		cout << instrStr;
@@ -344,8 +361,10 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		cout << "\t\t";
-		if (instr.type == simulator::instrType::J || instr.type == simulator::instrType::NOP) cout << '\t';
+		uint start = diagramStart - instrStr.length() + 4;
+		for (uint i = 0; i <= start; i++) {
+			cout << ' ';
+		}
 
 		// Stalls before decoding phase.
 		bool stallsDec = forwarding != simulator::forwardingType::FULL;
