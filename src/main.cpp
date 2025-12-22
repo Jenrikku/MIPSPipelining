@@ -336,6 +336,7 @@ int main(int argc, char *argv[])
 	uint pos = 0; // Position of the cursor in the pipeline diagram.
 	uint fetchpos = 0; // Position of the next fetch (first phase) in the pipeline diagram.
 	uint lastpos = 0; // Position of the last phase in the map (used for counting cycles).
+	uint instrCnt = 0; // Amount of actual instructions (removing SNOPs).
 	unordered_set<int> stalls; // Set of stalls already placed in the pipeline diagram.
 
 	int lasti = -1; // Stores last instruction that was not an SNOP.
@@ -398,9 +399,13 @@ int main(int argc, char *argv[])
 		lastpos = pos + 3;
 		pos = fetchpos;
 		lasti = i;
+		instrCnt++;
 		lastBranch = instr.type == simulator::instrType::BRA1 || instr.type == simulator::instrType::BRA2 ||
 					 instr.type == simulator::instrType::J;
 	}
 
-	if (!useRegularNOPs) cout << "\nCycles: " << lastpos << endl;
+	if (!useRegularNOPs) {
+		cout << "\nCycles: " << lastpos << "\nAverage CPI: " << lastpos << '/' << instrCnt << " = "
+			 << (float)lastpos / instrCnt << endl;
+	}
 }
