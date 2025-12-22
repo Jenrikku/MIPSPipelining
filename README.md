@@ -1,6 +1,8 @@
 # MIPS Pipeline Simulator
 
-Making use of a reduced set of instructions from the MIPS architecture, this program can interprete and execute assembly code as well as find possible data hazards according to the standard 5-stage MIPS pipeline.
+Making use of a reduced set of instructions from the MIPS architecture, this program can interprete and execute assembly code as well as find possible data hazards according to the standard 5-stage MIPS pipeline.  
+  
+This project was made as a task for the [UIB](https://uib.eu).
 
 ## Features
 
