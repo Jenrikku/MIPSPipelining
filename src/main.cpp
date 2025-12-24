@@ -209,7 +209,13 @@ int main(int argc, char *argv[])
 	// For each register, stores how many pipeline stages are left before the register's value is written (write-back)
 	char regDirty[32] = {};
 
-	bool lastSNOP = false; // Used for ALU-ALU forwarding.
+	// Stores which register was last written. Useful for ALU-ALU forwarding.
+	simulator::reg regLast = -1;
+
+	bool addNOP = false;
+
+	simulator::instrType nopType = useRegularNOPs ? simulator::instrType::NOP : simulator::instrType::SNOP;
+	simulator::instruction nop = {.displayName = "NOP", .type = nopType, .op = simulator::operation::NONE};
 
 	// Execution
 	for (uint pc = 0; pc < codeSize; pc++) {
@@ -236,8 +242,6 @@ int main(int argc, char *argv[])
 		simulator::pipPhase rSPhase = instr.calcRSNeeded();
 		simulator::pipPhase rTPhase = instr.calcRTNeeded();
 
-		bool addNOP = false;
-
 		switch (forwarding) {
 			case simulator::forwardingType::FULL:
 				if ((char)rSPhase > 0 && instr.rS > 0) addNOP |= regBusy[instr.rS] >= (char)rSPhase;
@@ -245,11 +249,14 @@ int main(int argc, char *argv[])
 				break;
 
 			case simulator::forwardingType::ALU:
+
 				if ((char)rSPhase > 0 && instr.rS > 0)
-					addNOP |= regBusy[instr.rS] > 2 || lastSNOP && regDirty[instr.rS] > 0;
+					addNOP |=
+						regLast == instr.rS ? regBusy[instr.rS] != 2 && regBusy[instr.rS] != 0 : regDirty[instr.rS] > 0;
 
 				if ((char)rTPhase > 0 && instr.rT > 0)
-					addNOP |= regBusy[instr.rT] > 2 || lastSNOP && regDirty[instr.rT] > 0;
+					addNOP |=
+						regLast == instr.rS ? regBusy[instr.rT] != 2 && regBusy[instr.rT] != 0 : regDirty[instr.rT] > 0;
 
 				break;
 
@@ -259,17 +266,14 @@ int main(int argc, char *argv[])
 				break;
 		}
 
-		simulator::instrType nopType = useRegularNOPs ? simulator::instrType::NOP : simulator::instrType::SNOP;
-		simulator::instruction nop = {.displayName = "NOP", .type = nopType, .op = simulator::operation::NONE};
+		regLast = -1;
 
 		if (addNOP) {
 			executedCode.push_back(nop);
-			lastSNOP = true;
+			addNOP = false;
 			--pc;
 			continue;
 		}
-
-		lastSNOP = false;
 
 		uint lastpc = pc;
 
@@ -328,6 +332,8 @@ int main(int argc, char *argv[])
 		}
 
 		if (regWrittenIdx < 0) continue;
+
+		regLast = regWrittenIdx;
 
 		regBusy[regWrittenIdx] = (char)instr.calcResultDone();
 		regDirty[regWrittenIdx] = (char)simulator::pipPhase::WRITEBACK - 2; // minus F & WB
