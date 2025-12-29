@@ -373,6 +373,8 @@ int main(int argc, char *argv[])
 			cout << ' ';
 		}
 
+		if (useTabs) cout << '\t';
+
 		// Stalls before decoding phase.
 		bool stallsDec = forwarding != simulator::forwardingType::FULL;
 
