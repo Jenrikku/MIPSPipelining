@@ -55,7 +55,7 @@ These labels will be used for branch and jump instructions.
 
 The assembly code may contain the following instructions:
 
-| Instruction    | Use               | Description                                                                                   |
+| Instruction    | Usage             | Description                                                                                   |
 | -------------- | ----------------- | --------------------------------------------------------------------------------------------- |
 | `NOP` / `NOOP` | `NOP`             | No operation.                                                                                 |
 | `ADD`          | `ADD $d, $s, $t`  | Adds the values of `$s` and `$t` and puts the result in `$d`.                                 |
@@ -90,7 +90,7 @@ The assembly code may contain the following instructions:
 
 In order to allocate memory, the following simulator directives can be used, always **before the code** that will execute.
 
-| Directive      | Use               | Description                                                                                            |
+| Directive      | Usage             | Description                                                                                            |
 | -------------- | ----------------- | ------------------------------------------------------------------------------------------------------ |
 | `DEFB`         | `DEFB $s, i`      | Adds a 1-byte (8 bits) variable with value `i` and puts its address into the register `$s`.            |
 | `DEFH`         | `DEFH $s, i`      | Adds a 2-byte (16 bits) variable with value `i` and puts its address into the register `$s`.           |
