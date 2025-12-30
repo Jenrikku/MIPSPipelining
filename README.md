@@ -1,6 +1,6 @@
 # MIPS Pipeline Simulator
 
-Making use of a reduced set of instructions from the MIPS architecture, this program can interprete and execute assembly code as well as find possible data hazards according to the standard 5-stage MIPS pipeline.  
+Making use of a reduced set of instructions from the MIPS architecture, this program can interpret and execute assembly code as well as find possible data hazards according to the standard 5-stage MIPS pipeline.  
   
 This project was made as a task for the [UIB](https://uib.eu).
 
@@ -37,13 +37,13 @@ Here is a list of the supported instructions:
     - \> 0 (`BGTZ`)
     - ≤ 0 (`BLEZ`)
     - < 0 (`BLTZ`)
-- Inconditional Jump (`J`)
+- Unconditional Jump (`J`)
 
 ## Building
 
 ### Linux
 
-In orther to build for Linux, make you sure have Flex, Bison, CMake, Make and a C++ compiler of your choice installed in your system. These tools tend to come in a bundle when installing developer tools in most distributions.
+In order to build for Linux, make you sure have Flex, Bison, CMake, Make and a C++ compiler of your choice installed in your system. These tools tend to come in a bundle when installing developer tools in most distributions.
 
 ```
 mkdir build
