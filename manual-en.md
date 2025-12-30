@@ -13,7 +13,7 @@ The program as a whole is used through a command-line interface. The following s
 - **-i --input**: Specifies the input file from which the assembly code will be read.
 - **-o --output**: Specifies the output file where the program's results will be written.
 - **-n --nops**: Instead of showing the pipeline diagram, add `NOP`s to the code so that there are no data hazards.
-- **-d --branch-in-dec**: Simulates that the branch is calculated during the decode phase which means that the next instruction to execute is already known once the decode phase ends.
+- **-d --branch-in-dec**: Simulates that branches are calculated during the decode phase which means that the next instruction to execute is already known once the decode phase ends.
 - **-u --unlimited**: In order to avoid infinite loops, there is a maximum number of instructions that may be executed in the simulator. This option nullifies the set limit.
 - **-t --tabs**: Use tabs rather than spaces when printing the pipeline diagram phases.
 - **-f --forwarding**: Allows specifying which of the following forwarding types to use:
@@ -28,6 +28,14 @@ The program as a whole is used through a command-line interface. The following s
 
 The options follow the POSIX standard as well as the [GNU extensions](https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html).  
 Note that if no input file is specified, then the terminal input will be used. The program will start the simulation once the end of the file is found, which can be sent in most terminals by pressing Ctrl+D.
+
+#### Usage example
+
+```
+mipspipeline -falu -bnt -d -n -i "basic.asm" -o "output.txt"
+```
+
+This example uses forwarding only for the execution phases, branch prediction always as not taken, simulates that branches are calculated during the decode phase, adds `NOP`s rather than showing the diagram, reads from the file "basic.asm" and writes the results to "output.txt".
 
 ### Assembly code
 

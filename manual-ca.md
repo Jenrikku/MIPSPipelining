@@ -29,6 +29,14 @@ El programa s'utilitza en la seva totalitat mitjançant una interfície de líni
 Les opcions segueixen l'estàndard POSIX juntament amb les [extensions del GNU](https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html).  
 Notau que si no especificau un fitxer d'entrada, llavors s'utilitzaran les dades que entren per terminal. El programa començarà la simulació tan bon punt trobi el final del fitxer, que es pot enviar a la majoria de terminals prement Ctrl+D.
 
+#### Exemple d'ús
+
+```
+mipspipeline -falu -bnt -d -n -i "basic.asm" -o "output.txt"
+```
+
+En aquest exemple s'utilitza *forwarding* només a les fases d'execució, predicció de *branch* com que mai s'agafaran, es simula que els *branch* es calculen a la fase de decode, s'afegeixen `NOP`s en comptes de mostrar el diagrama, es llegeix el fitxer "basic.asm" i s'escriu el resultat a "output.txt".
+
 ### Codi d'entrada
 
 El codi d'entrada pot fer un ús lliure de les majúscules i minúscules ja que el programa no les diferencia.  
